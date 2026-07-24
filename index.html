@@ -504,7 +504,7 @@
                 });
         }
 
-        // 使用最穩定的 GET 參數傳遞進行備份，保證欄位完美對齊
+        // 透過標準 POST 傳遞 JSON 內容，完美解決長度限制與欄位錯位問題
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -518,27 +518,29 @@
             statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
-            const jsonString = encodeURIComponent(JSON.stringify(tableData));
-            const fullUrl = `${gasUrl}?action=save&data=${jsonString}`;
-
-            fetch(fullUrl)
-                .then(response => response.json())
-                .then(res => {
-                    if(res.status === "success") {
-                        statusSpan.style.color = "#2e7d32";
-                        statusSpan.textContent = "備份至 Google 試算表成功！";
-                        setTimeout(() => statusSpan.textContent = "", 3000);
-                    } else {
-                        statusSpan.style.color = "#d32f2f";
-                        statusSpan.textContent = "雲端備份失敗：" + (res.message || "");
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
+            fetch(gasUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'data=' + encodeURIComponent(JSON.stringify(tableData))
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.status === "success") {
                     statusSpan.style.color = "#2e7d32";
                     statusSpan.textContent = "備份至 Google 試算表成功！";
                     setTimeout(() => statusSpan.textContent = "", 3000);
-                });
+                } else {
+                    statusSpan.style.color = "#d32f2f";
+                    statusSpan.textContent = "雲端備份失敗：" + (res.message || "未知錯誤");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                statusSpan.style.color = "#d32f2f";
+                statusSpan.textContent = "備份發生錯誤，請確認網址是否正確。";
+            });
         }
     </script>
 </body>
