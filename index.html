@@ -8,7 +8,6 @@
         body { font-family: sans-serif; margin: 15px; }
         .form-section { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .form-row { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .form-group input { padding: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 13px; }
         th { background-color: #f4f4f4; }
@@ -50,7 +49,6 @@
 
     <h1>🎬 我的小說與短劇追蹤看板</h1>
 
-    <!-- Google Sheets 雲端備份與同步設定區 -->
     <section style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
         <h4 style="margin: 0 0 5px 0;">🔗 Google Sheets 雲端備份</h4>
         <input type="text" id="gas-url" placeholder="請貼上正確的 Apps Script 網址..." style="width: 60%; padding: 5px; margin-bottom: 5px;">
@@ -60,7 +58,6 @@
         <div id="sync-status" style="margin-top: 5px; font-size: 12px; font-weight: bold;"></div>
     </section>
 
-    <!-- 分類標籤管理與複選篩選區 -->
     <section style="background: #f1f8e9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
         <h3>🏷️ 分類標籤複選篩選與管理</h3>
         <div class="tag-container" id="tag-list"></div>
@@ -70,7 +67,6 @@
         </div>
     </section>
 
-    <!-- 新增/編輯資料表單 -->
     <section class="form-section">
         <h3 id="form-title">新增追蹤項目</h3>
         <form id="tracker-form" onsubmit="saveRow(event)">
@@ -112,7 +108,6 @@
         </form>
     </section>
 
-    <!-- 資料呈現與智慧篩選清單 -->
     <section>
         <h3>追蹤清單總覽</h3>
         <table>
@@ -509,7 +504,7 @@
                 });
         }
 
-        // 透過標準 POST 備份至 Google Sheets，確保欄位絕對不會錯位
+        // 使用最穩定的 GET 參數傳遞進行備份，保證欄位完美對齊
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -523,27 +518,27 @@
             statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
-            fetch(gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ data: tableData })
-            })
-            .then(response => response.json())
-            .then(res => {
-                if(res.status === "success") {
+            const jsonString = encodeURIComponent(JSON.stringify(tableData));
+            const fullUrl = `${gasUrl}?action=save&data=${jsonString}`;
+
+            fetch(fullUrl)
+                .then(response => response.json())
+                .then(res => {
+                    if(res.status === "success") {
+                        statusSpan.style.color = "#2e7d32";
+                        statusSpan.textContent = "備份至 Google 試算表成功！";
+                        setTimeout(() => statusSpan.textContent = "", 3000);
+                    } else {
+                        statusSpan.style.color = "#d32f2f";
+                        statusSpan.textContent = "雲端備份失敗：" + (res.message || "");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
                     statusSpan.style.color = "#2e7d32";
                     statusSpan.textContent = "備份至 Google 試算表成功！";
                     setTimeout(() => statusSpan.textContent = "", 3000);
-                } else {
-                    statusSpan.style.color = "#d32f2f";
-                    statusSpan.textContent = "雲端備份失敗：" + (res.message || "未知錯誤");
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                statusSpan.style.color = "#2e7d32";
-                statusSpan.textContent = "備份至 Google 試算表成功！";
-                setTimeout(() => statusSpan.textContent = "", 3000);
-            });
+                });
         }
     </script>
 </body>
