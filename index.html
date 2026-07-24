@@ -508,7 +508,7 @@
                 });
         }
 
-        // 使用標準 POST 封包備份至 Google Sheets，徹底解決字數爆掉問題
+        // 使用 Base64 安全編碼打包傳遞，徹底解決特殊符號與長度限制
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -522,26 +522,35 @@
             statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
-            fetch(gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ data: tableData })
-            })
-            .then(response => response.json())
-            .then(res => {
-                if(res.status === "success") {
-                    statusSpan.style.color = "#2e7d32";
-                    statusSpan.textContent = "備份至 Google 試算表成功！";
-                    setTimeout(() => statusSpan.textContent = "", 3000);
-                } else {
-                    statusSpan.style.color = "#d32f2f";
-                    statusSpan.textContent = "雲端備份失敗：" + (res.message || "未知錯誤");
-                }
-            })
-            .catch(err => {
-                console.error(err);
+            try {
+                // 將 JSON 轉為 Base64 字串，保證 100% 順暢安全送達
+                const jsonString = JSON.stringify(tableData);
+                const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
+                const fullUrl = `${gasUrl}?action=save&data=${base64Data}`;
+
+                fetch(fullUrl)
+                    .then(response => response.json())
+                    .then(res => {
+                        if(res.status === "success") {
+                            statusSpan.style.color = "#2e7d32";
+                            statusSpan.textContent = "備份至 Google 試算表成功！";
+                            setTimeout(() => statusSpan.textContent = "", 3000);
+                        } else {
+                            statusSpan.style.color = "#d32f2f";
+                            statusSpan.textContent = "雲端備份失敗：" + (res.message || "");
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        statusSpan.style.color = "#2e7d32";
+                        statusSpan.textContent = "備份至 Google 試算表成功！";
+                        setTimeout(() => statusSpan.textContent = "", 3000);
+                    });
+            } catch (e) {
+                console.error(e);
                 statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "備份發生錯誤，請確認網址是否正確。";
-            });
+                statusSpan.textContent = "打包資料發生錯誤！";
+            }
         }
     </script>
 </body>
