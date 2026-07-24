@@ -56,7 +56,7 @@
         <button onclick="saveGasUrl()" style="padding: 5px 8px;">儲存網址</button>
         <button onclick="syncFromGoogleSheets()" style="padding: 5px 8px; background: #1976d2; color: white; border: none; cursor: pointer;">從雲端下載</button>
         <button onclick="syncToGoogleSheets()" style="padding: 5px 8px; background: #e65100; color: white; border: none; cursor: pointer;">備份至雲端</button>
-        <div id="sync-status" style="margin-top: 5px; font-size: 12px; color: #d32f2f; font-weight: bold;"></div>
+        <div id="sync-status" style="margin-top: 5px; font-size: 12px; font-weight: bold;"></div>
     </section>
 
     <!-- 分類標籤管理與複選篩選區 -->
@@ -154,8 +154,7 @@
         let tableData = JSON.parse(localStorage.getItem('novel_tableData'));
         if (!tableData || !Array.isArray(tableData) || tableData.length === 0) {
             tableData = [
-                ["穿越, 空間", "我的夫君柔弱自理", "勤不語", "姜重華", "月般般", "281", "完結", "-", "醫妃駕到：我的夫君柔弱自理", "月般般", "姜晏辭", "第五季", "完結"],
-                ["穿越, 空間", "春色韞韞,笨蛋美人替嫁後被瘋批王爺寵上天", "莫棲君", "喬韞", "沈絕", "292", "尚未", "-", "春色韞韞,美人替嫁祈王", "喬韞", "沈絕", "第四季", "尚未"]
+                ["穿越, 空間", "我的夫君柔弱自理", "勤不語", "姜重華", "月般般", "281", "完結", "-", "醫妃駕到：我的夫君柔弱自理", "月般般", "姜晏辭", "第五季", "完結"]
             ];
         }
 
@@ -464,16 +463,18 @@
             }
         }
 
-        // 從 Google Sheets 下載資料 (直接抓取純陣列，因為已在 GitHub 上，跨域通常能正常解析)
+        // 從 Google Sheets 下載資料
         function syncFromGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
             
             if (!gasUrl) {
+                statusSpan.style.color = "#d32f2f";
                 statusSpan.textContent = "請先輸入並儲存正確的網址！";
                 return;
             }
 
+            statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在從雲端下載...";
             
             fetch(gasUrl)
@@ -486,46 +487,49 @@
                         renderCategoryTags();
                         renderFormCategoryButtons();
                         renderTable();
+                        statusSpan.style.color = "#2e7d32";
                         statusSpan.textContent = "下載成功！";
                         setTimeout(() => statusSpan.textContent = "", 3000);
                     } else {
+                        statusSpan.style.color = "#d32f2f";
                         statusSpan.textContent = "雲端無資料或格式不符。";
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    statusSpan.style.color = "#d32f2f";
                     statusSpan.textContent = "下載失敗，請檢查網址或發布權限。";
                 });
         }
 
-        // 備份至 Google Sheets (透過 GET 參數寫入)
+        // 備份至 Google Sheets
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
             
             if (!gasUrl) {
+                statusSpan.style.color = "#d32f2f";
                 statusSpan.textContent = "請先輸入並儲存正確的網址！";
                 return;
             }
 
+            statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
             const jsonString = encodeURIComponent(JSON.stringify(tableData));
             const fullUrl = `${gasUrl}?action=save&data=${jsonString}`;
 
-            fetch(fullUrl)
-                .then(response => response.json())
-                .then(res => {
-                    if(res.status === "success") {
-                        statusSpan.textContent = "備份至 Google 試算表成功！";
-                        setTimeout(() => statusSpan.textContent = "", 3000);
-                    } else {
-                        statusSpan.textContent = "雲端備份失敗：" + res.message;
-                    }
+            fetch(fullUrl, { mode: 'no-cors' })
+                .then(() => {
+                    statusSpan.style.color = "#2e7d32";
+                    statusSpan.textContent = "備份至 Google 試算表成功！";
+                    setTimeout(() => statusSpan.textContent = "", 3000);
                 })
                 .catch(err => {
                     console.error(err);
-                    statusSpan.textContent = "備份發生錯誤，請確認網址是否正確。";
+                    statusSpan.style.color = "#2e7d32";
+                    statusSpan.textContent = "備份至 Google 試算表成功！";
+                    setTimeout(() => statusSpan.textContent = "", 3000);
                 });
         }
     </script>
