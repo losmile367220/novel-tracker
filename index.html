@@ -307,22 +307,23 @@
                 let values = new Set();
                 tableData.forEach(row => {
                     if (row[colIdx]) {
+                        let valStr = String(row[colIdx]).trim();
                         if (colIdx === 0) {
-                            row[colIdx].split(',').forEach(c => values.add(c.trim()));
+                            valStr.split(',').forEach(c => {
+                                if (c.trim() && c.trim() !== "-") values.add(c.trim());
+                            });
                         } else {
-                            values.add(row[colIdx].trim());
+                            if (valStr && valStr !== "-") values.add(valStr);
                         }
                     }
                 });
 
                 select.innerHTML = '<option value="">全部</option>';
                 values.forEach(val => {
-                    if (val !== "" && val !== "-") {
-                        let opt = document.createElement("option");
-                        opt.value = val;
-                        opt.textContent = val;
-                        select.appendChild(opt);
-                    }
+                    let opt = document.createElement("option");
+                    opt.value = val;
+                    opt.textContent = val;
+                    select.appendChild(opt);
                 });
                 select.value = currentValue;
             }
@@ -347,7 +348,7 @@
                         const selectElem = document.getElementById(`col-${colIdx}`);
                         if (selectElem && selectElem.value !== "") {
                             let filterVal = selectElem.value;
-                            let cellText = rowData[colIdx] ? rowData[colIdx] : "";
+                            let cellText = rowData[colIdx] ? String(rowData[colIdx]) : "";
                             if (colIdx === 0) {
                                 let rowCats = cellText.split(',').map(c => c.trim());
                                 if (!rowCats.includes(filterVal)) {
@@ -463,7 +464,7 @@
             }
         }
 
-        // 從 Google Sheets 下載資料 (透過 GET 參數讀取)
+        // 從 Google Sheets 下載資料 (直接抓取純陣列，因為已在 GitHub 上，跨域通常能正常解析)
         function syncFromGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -475,14 +476,11 @@
 
             statusSpan.textContent = "正在從雲端下載...";
             
-            // 加上 action=load 讓 GAS 知道是要讀取資料
-            const fullUrl = `${gasUrl}?action=load`;
-
-            fetch(fullUrl)
+            fetch(gasUrl)
                 .then(response => response.json())
-                .then(res => {
-                    if(res && res.status === "success" && Array.isArray(res.data)) {
-                        tableData = res.data;
+                .then(data => {
+                    if(data && Array.isArray(data) && data.length > 0) {
+                        tableData = data;
                         saveDataToLocal();
                         extractCategoriesFromData();
                         renderCategoryTags();
