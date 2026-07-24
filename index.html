@@ -6,8 +6,9 @@
     <title>我的小說與短劇追蹤看板</title>
     <style>
         body { font-family: sans-serif; margin: 15px; }
-        .form-group { margin-bottom: 10px; }
-        .form-group input { margin-right: 5px; margin-bottom: 5px; }
+        .form-section { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .form-row { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .form-group input { padding: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 13px; }
         th { background-color: #f4f4f4; }
@@ -70,37 +71,44 @@
     </section>
 
     <!-- 新增/編輯資料表單 -->
-    <section style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+    <section class="form-section">
         <h3 id="form-title">新增追蹤項目</h3>
         <form id="tracker-form" onsubmit="saveRow(event)">
             <input type="hidden" id="edit-index" value="">
             
             <h4>📖 小說資訊</h4>
-            <div class="form-group">
+            <div class="form-row">
                 <input type="hidden" id="category" value="穿越" required>
-                <span style="font-size: 13px; font-weight: bold; margin-right: 5px;">選擇分類(可多選)：</span>
-                <span id="form-category-tags" style="display:inline-block; margin-right: 15px;"></span>
-                
-                <input type="text" id="novelName" placeholder="小說名稱" required style="width: 180px;">
-                <input type="text" id="author" placeholder="作者" style="width: 100px;">
-                <input type="text" id="novelML" placeholder="男主角" style="width: 90px;">
-                <input type="text" id="novelFL" placeholder="女主角" style="width: 90px;">
-                <input type="text" id="chapter" placeholder="章節" style="width: 70px;">
-                <input type="text" id="novelStatus" placeholder="完結" style="width: 60px;">
-                <input type="text" id="txtLink" placeholder="txt 連結/備註" style="width: 100px;">
+                <span style="font-size: 13px; font-weight: bold;">選擇分類(可多選)：</span>
+                <span id="form-category-tags" style="display:inline-block; width:100%;"></span>
+            </div>
+            
+            <div class="form-row">
+                <input type="text" id="novelName" placeholder="小說名稱" required style="width: 220px;">
+                <input type="text" id="author" placeholder="作者" style="width: 120px;">
+                <input type="text" id="novelML" placeholder="男主角" style="width: 100px;">
+                <input type="text" id="novelFL" placeholder="女主角" style="width: 100px;">
+            </div>
+
+            <div class="form-row">
+                <input type="text" id="chapter" placeholder="章節" style="width: 90px;">
+                <input type="text" id="novelStatus" placeholder="完結狀態" style="width: 90px;">
+                <input type="text" id="txtLink" placeholder="txt 連結/備註" style="width: 150px;">
             </div>
 
             <h4>🎥 短劇資訊</h4>
-            <div class="form-group">
-                <input type="text" id="dramaName" placeholder="短劇名稱" style="width: 180px;">
-                <input type="text" id="dramaML" placeholder="短劇男主角" style="width: 90px;">
-                <input type="text" id="dramaFL" placeholder="短劇女主角" style="width: 90px;">
+            <div class="form-row">
+                <input type="text" id="dramaName" placeholder="短劇名稱" style="width: 220px;">
+                <input type="text" id="dramaML" placeholder="短劇男主角" style="width: 100px;">
+                <input type="text" id="dramaFL" placeholder="短劇女主角" style="width: 100px;">
                 <input type="text" id="dramaProgress" placeholder="進度 (如第四季)" style="width: 110px;">
-                <input type="text" id="dramaStatus" placeholder="完結" style="width: 60px;">
+                <input type="text" id="dramaStatus" placeholder="完結狀態" style="width: 90px;">
             </div>
             
-            <button type="submit" id="submit-btn" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; cursor: pointer; margin-top: 10px;">新增資料</button>
-            <button type="button" id="cancel-btn" onclick="resetForm()" style="padding: 8px 16px; background: #9e9e9e; color: white; border: none; cursor: pointer; margin-top: 10px; display: none;">取消編輯</button>
+            <div style="margin-top: 15px;">
+                <button type="submit" id="submit-btn" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; cursor: pointer;">新增資料</button>
+                <button type="button" id="cancel-btn" onclick="resetForm()" style="padding: 8px 16px; background: #9e9e9e; color: white; border: none; cursor: pointer; display: none; margin-left: 5px;">取消編輯</button>
+            </div>
         </form>
     </section>
 
@@ -463,7 +471,6 @@
             }
         }
 
-        // 從 Google Sheets 下載資料
         function syncFromGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -502,7 +509,6 @@
                 });
         }
 
-        // 備份至 Google Sheets (完美避開跨域紅字誤報)
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -520,7 +526,7 @@
             const fullUrl = `${gasUrl}?action=save&data=${jsonString}`;
 
             fetch(fullUrl, { mode: 'no-cors' })
-                .catch(() => {}) // 忽略跨域阻擋的假錯誤
+                .catch(() => {})
                 .finally(() => {
                     statusSpan.style.color = "#2e7d32";
                     statusSpan.textContent = "備份至 Google 試算表成功！";
