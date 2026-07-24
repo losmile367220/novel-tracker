@@ -508,7 +508,7 @@
                 });
         }
 
-        // 使用 Base64 安全編碼打包傳遞，徹底解決特殊符號與長度限制
+        // 使用標準 encodeURIComponent 進行安全編碼備份
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -523,10 +523,9 @@
             statusSpan.textContent = "正在備份至雲端...";
 
             try {
-                // 將 JSON 轉為 Base64 字串，保證 100% 順暢安全送達
                 const jsonString = JSON.stringify(tableData);
-                const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
-                const fullUrl = `${gasUrl}?action=save&data=${base64Data}`;
+                const encodedData = encodeURIComponent(jsonString);
+                const fullUrl = `${gasUrl}?action=save&data=${encodedData}`;
 
                 fetch(fullUrl)
                     .then(response => response.json())
