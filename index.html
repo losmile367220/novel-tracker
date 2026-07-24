@@ -508,7 +508,7 @@
                 });
         }
 
-        // 使用標準 POST 請求發送資料，徹底解決 400 錯誤與字數限制
+        // 使用隱藏表單 POST 提交，徹底消滅 400 錯誤與 URL 長度限制
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -522,26 +522,25 @@
             statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
-            fetch(gasUrl, {
-                method: 'POST',
-                body: JSON.stringify({ data: tableData })
-            })
-            .then(response => response.json())
-            .then(res => {
-                if(res.status === "success") {
-                    statusSpan.style.color = "#2e7d32";
-                    statusSpan.textContent = "備份至 Google 試算表成功！";
-                    setTimeout(() => statusSpan.textContent = "", 3000);
-                } else {
-                    statusSpan.style.color = "#d32f2f";
-                    statusSpan.textContent = "雲端備份失敗：" + (res.message || "未知錯誤");
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "連線失敗，請檢查網路或網址。";
-            });
+            // 動態建立隱藏的 Form 表單以 POST 送出，完美繞過 fetch 重新導向與 400 錯誤
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = gasUrl;
+            form.target = '_blank'; // 用新視窗或隱藏都可以，這邊直接送出
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(tableData);
+
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            statusSpan.style.color = "#2e7d32";
+            statusSpan.textContent = "備份封包已送出至 Google 試算表！";
+            setTimeout(() => statusSpan.textContent = "", 4000);
         }
     </script>
 </body>
