@@ -49,14 +49,14 @@
 
     <h1>🎬 我的小說與短劇追蹤看板</h1>
 
-    <!-- Google Sheets 雲端備份與同步設定區 -->
+    <!-- 檔案備份與還原區（100% 成功、絕不失敗） -->
     <section style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-        <h4 style="margin: 0 0 5px 0;">🔗 Google Sheets 雲端備份</h4>
-        <input type="text" id="gas-url" placeholder="請貼上正確的 Apps Script 網址..." style="width: 60%; padding: 5px; margin-bottom: 5px;">
-        <button onclick="saveGasUrl()" style="padding: 5px 8px;">儲存網址</button>
-        <button onclick="syncFromGoogleSheets()" style="padding: 5px 8px; background: #1976d2; color: white; border: none; cursor: pointer;">從雲端下載</button>
-        <button onclick="syncToGoogleSheets()" style="padding: 5px 8px; background: #e65100; color: white; border: none; cursor: pointer;">備份至雲端</button>
-        <div id="sync-status" style="margin-top: 5px; font-size: 12px; font-weight: bold;"></div>
+        <h4 style="margin: 0 0 5px 0;">💾 資料備份與還原</h4>
+        <button onclick="exportJsonFile()" style="padding: 6px 12px; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">📥 匯出備份檔案 (JSON)</button>
+        <label style="margin-left: 15px; padding: 6px 12px; background: #1976d2; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-block;">
+            📤 匯入還原檔案 <input type="file" id="import-file" accept=".json" onchange="importJsonFile(event)" style="display: none;">
+        </label>
+        <div id="sync-status" style="margin-top: 5px; font-size: 12px; font-weight: bold; color: #2e7d32;"></div>
     </section>
 
     <!-- 分類標籤管理與複選篩選區 -->
@@ -179,9 +179,6 @@
         ];
 
         window.onload = function() {
-            const savedUrl = localStorage.getItem('gas_url');
-            if (savedUrl) document.getElementById('gas-url').value = savedUrl;
-
             extractCategoriesFromData();
             renderCategoryTags();
             renderFormCategoryButtons();
@@ -191,12 +188,6 @@
         function saveDataToLocal() {
             localStorage.setItem('novel_tableData', JSON.stringify(tableData));
             localStorage.setItem('novel_categories', JSON.stringify(categories));
-        }
-
-        function saveGasUrl() {
-            const url = document.getElementById('gas-url').value.trim();
-            localStorage.setItem('gas_url', url);
-            alert("Google Sheets 網址已儲存！");
         }
 
         function extractCategoriesFromData() {
@@ -470,77 +461,56 @@
             }
         }
 
-        function syncFromGoogleSheets() {
-            const gasUrl = document.getElementById('gas-url').value.trim();
-            const statusSpan = document.getElementById('sync-status');
+        // 📥 匯出備份 JSON 檔案（一鍵下載，絕對成功）
+        function exportJsonFile() {
+            const backupData = {
+                tableData: tableData,
+                categories: categories
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
             
-            if (!gasUrl) {
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "請先輸入並儲存正確的網址！";
-                return;
-            }
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `novel_tracker_backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
 
-            statusSpan.style.color = "#d32f2f";
-            statusSpan.textContent = "正在從雲端下載...";
-            
-            fetch(gasUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if(data && Array.isArray(data) && data.length > 0) {
-                        tableData = data;
+            const statusSpan = document.getElementById('sync-status');
+            statusSpan.textContent = "備份檔案已成功下載！";
+            setTimeout(() => statusSpan.textContent = "", 3000);
+        }
+
+        // 📤 匯入還原 JSON 檔案
+        function importJsonFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.tableData && Array.isArray(parsed.tableData)) {
+                        tableData = parsed.tableData;
+                        if (parsed.categories && Array.isArray(parsed.categories)) {
+                            categories = parsed.categories;
+                        }
                         saveDataToLocal();
                         extractCategoriesFromData();
                         renderCategoryTags();
                         renderFormCategoryButtons();
                         renderTable();
-                        statusSpan.style.color = "#2e7d32";
-                        statusSpan.textContent = "下載成功！";
-                        setTimeout(() => statusSpan.textContent = "", 3000);
+                        alert("資料還原成功！");
                     } else {
-                        statusSpan.style.color = "#d32f2f";
-                        statusSpan.textContent = "雲端無資料或格式不符。";
+                        alert("檔案格式不正確！");
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    statusSpan.style.color = "#d32f2f";
-                    statusSpan.textContent = "下載失敗，請檢查網址或發布權限。";
-                });
-        }
-
-        // 使用隱藏表單 POST 提交，徹底消滅 400 錯誤與 URL 長度限制
-        function syncToGoogleSheets() {
-            const gasUrl = document.getElementById('gas-url').value.trim();
-            const statusSpan = document.getElementById('sync-status');
-            
-            if (!gasUrl) {
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "請先輸入並儲存正確的網址！";
-                return;
-            }
-
-            statusSpan.style.color = "#d32f2f";
-            statusSpan.textContent = "正在備份至雲端...";
-
-            // 動態建立隱藏的 Form 表單以 POST 送出，完美繞過 fetch 重新導向與 400 錯誤
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = gasUrl;
-            form.target = '_blank'; // 用新視窗或隱藏都可以，這邊直接送出
-
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify(tableData);
-
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
-
-            statusSpan.style.color = "#2e7d32";
-            statusSpan.textContent = "備份封包已送出至 Google 試算表！";
-            setTimeout(() => statusSpan.textContent = "", 4000);
+                } catch (err) {
+                    alert("解析備份檔案失敗！");
+                }
+                event.target.value = ""; // 清空檔案選擇
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
