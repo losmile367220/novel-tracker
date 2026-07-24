@@ -508,7 +508,7 @@
                 });
         }
 
-        // 使用 no-cors 模式，完美避開 JSON 解析與重新導向崩潰
+        // 精準檢查 Google 回應的備份函式
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -526,12 +526,22 @@
             const encodedData = encodeURIComponent(jsonString);
             const fullUrl = `${gasUrl}?action=save&data=${encodedData}`;
 
-            fetch(fullUrl, { mode: 'no-cors' })
-                .catch(() => {})
-                .finally(() => {
-                    statusSpan.style.color = "#2e7d32";
-                    statusSpan.textContent = "備份至 Google 試算表成功！";
-                    setTimeout(() => statusSpan.textContent = "", 3000);
+            fetch(fullUrl)
+                .then(response => response.text())
+                .then(result => {
+                    if (result.trim() === "success") {
+                        statusSpan.style.color = "#2e7d32";
+                        statusSpan.textContent = "備份至 Google 試算表成功！";
+                        setTimeout(() => statusSpan.textContent = "", 3000);
+                    } else {
+                        statusSpan.style.color = "#d32f2f";
+                        statusSpan.textContent = "備份失敗：" + result;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    statusSpan.style.color = "#d32f2f";
+                    statusSpan.textContent = "連線失敗，請檢查網路或網址。";
                 });
         }
     </script>
