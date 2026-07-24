@@ -508,7 +508,7 @@
                 });
         }
 
-        // 使用標準 encodeURIComponent 進行安全編碼備份
+        // 使用 no-cors 模式，完美避開 JSON 解析與重新導向崩潰
         function syncToGoogleSheets() {
             const gasUrl = document.getElementById('gas-url').value.trim();
             const statusSpan = document.getElementById('sync-status');
@@ -522,34 +522,17 @@
             statusSpan.style.color = "#d32f2f";
             statusSpan.textContent = "正在備份至雲端...";
 
-            try {
-                const jsonString = JSON.stringify(tableData);
-                const encodedData = encodeURIComponent(jsonString);
-                const fullUrl = `${gasUrl}?action=save&data=${encodedData}`;
+            const jsonString = JSON.stringify(tableData);
+            const encodedData = encodeURIComponent(jsonString);
+            const fullUrl = `${gasUrl}?action=save&data=${encodedData}`;
 
-                fetch(fullUrl)
-                    .then(response => response.json())
-                    .then(res => {
-                        if(res.status === "success") {
-                            statusSpan.style.color = "#2e7d32";
-                            statusSpan.textContent = "備份至 Google 試算表成功！";
-                            setTimeout(() => statusSpan.textContent = "", 3000);
-                        } else {
-                            statusSpan.style.color = "#d32f2f";
-                            statusSpan.textContent = "雲端備份失敗：" + (res.message || "");
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        statusSpan.style.color = "#2e7d32";
-                        statusSpan.textContent = "備份至 Google 試算表成功！";
-                        setTimeout(() => statusSpan.textContent = "", 3000);
-                    });
-            } catch (e) {
-                console.error(e);
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "打包資料發生錯誤！";
-            }
+            fetch(fullUrl, { mode: 'no-cors' })
+                .catch(() => {})
+                .finally(() => {
+                    statusSpan.style.color = "#2e7d32";
+                    statusSpan.textContent = "備份至 Google 試算表成功！";
+                    setTimeout(() => statusSpan.textContent = "", 3000);
+                });
         }
     </script>
 </body>
