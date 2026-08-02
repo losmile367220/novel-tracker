@@ -160,6 +160,118 @@
             }
         }
 
+    
+        /* 分類標籤收合區 */
+        .category-collapse {
+            background: #f1f8e9;
+            border: 1px solid #dcebd4;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .category-collapse-summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .category-collapse-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .category-collapse-summary::after {
+            content: "展開 ▼";
+            flex-shrink: 0;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #397a3d;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .category-collapse[open] .category-collapse-summary::after {
+            content: "收合 ▲";
+        }
+
+        .category-collapse-info {
+            margin-left: auto;
+            color: #5f6f5c;
+            font-size: 13px;
+            font-weight: normal;
+        }
+
+        .category-collapse-content {
+            padding: 0 15px 15px;
+            border-top: 1px solid #dcebd4;
+        }
+
+        .category-collapse-content .tag-container {
+            padding-top: 14px;
+        }
+
+        .category-manage-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .category-manage-row input {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 10px;
+            border: 1px solid #cfd8cc;
+            border-radius: 8px;
+        }
+
+        .category-manage-row button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 700px) {
+            .category-collapse-summary {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                padding: 13px;
+                font-size: 16px;
+            }
+
+            .category-collapse-info {
+                order: 3;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .category-collapse-content {
+                padding: 0 12px 12px;
+            }
+
+            .category-manage-row {
+                flex-direction: column;
+            }
+
+            .category-manage-row input,
+            .category-manage-row button {
+                width: 100%;
+                min-height: 42px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -177,14 +289,21 @@
     </section>
 
     <!-- 分類標籤管理與複選篩選區 -->
-    <section style="background: #f1f8e9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-        <h3>🏷️ 分類標籤複選篩選與管理</h3>
-        <div class="tag-container" id="tag-list"></div>
-        <div style="margin-top: 10px;">
-            <input type="text" id="new-tag-input" placeholder="輸入新分類名稱..." style="padding: 5px;">
-            <button onclick="addNewTagFromInput()" style="padding: 5px 10px;">新增分類標籤</button>
+    <details class="category-collapse" id="category-collapse">
+        <summary class="category-collapse-summary">
+            <span>🏷️ 分類標籤篩選與管理</span>
+            <span class="category-collapse-info" id="category-filter-info">目前顯示：全部分類</span>
+        </summary>
+
+        <div class="category-collapse-content">
+            <div class="tag-container" id="tag-list"></div>
+
+            <div class="category-manage-row">
+                <input type="text" id="new-tag-input" placeholder="輸入新分類名稱...">
+                <button type="button" onclick="addNewTagFromInput()">新增分類標籤</button>
+            </div>
         </div>
-    </section>
+    </details>
 
     <!-- 新增/編輯資料表單 -->
     <section class="form-section">
@@ -371,6 +490,13 @@
                     </button>`;
             });
             tagList.innerHTML = html;
+
+            const filterInfo = document.getElementById('category-filter-info');
+            if (filterInfo) {
+                filterInfo.textContent = activeCategoryFilters.length === 0
+                    ? '目前顯示：全部分類'
+                    : `已選 ${activeCategoryFilters.length} 個：${activeCategoryFilters.join('、')}`;
+            }
         }
 
         function toggleCategoryFilter(category, btnElement) {
