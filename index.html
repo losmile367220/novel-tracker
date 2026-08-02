@@ -790,10 +790,29 @@
       ]];
     }
 
-    let categories = parseStoredJson("novel_categories", []);
-    if (!Array.isArray(categories) || categories.length === 0) {
-      categories = ["穿越", "空間", "系統", "重生"];
-    }
+  let categories = JSON.parse(localStorage.getItem('novel_categories'));
+if (!categories || !Array.isArray(categories) || categories.length === 0) {
+    categories = [
+        "穿越",
+        "空間",
+        "系統",
+        "重生",
+        "報仇",
+        "異能",
+        "奇幻",
+        "獸世",
+        "多夫",
+        "穿書",
+        "古代",
+        "現代",
+        "瘋批",
+        "宮鬥",
+        "萌寶",
+        "祭品",
+        "豪門總裁",
+        "修真"
+    ];
+}
 
     let activeCategoryFilters = [];
     let activeTypeFilter = "all";
