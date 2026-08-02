@@ -1,950 +1,1369 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的小說與短劇追蹤看板</title>
-    <style>
-        body { font-family: sans-serif; margin: 15px; }
-        .form-section { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .form-row { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 13px; }
-        th { background-color: #f4f4f4; }
-        .filter-row select { width: 100%; padding: 4px; font-size: 12px; }
-        
-        .tag-container { margin: 10px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .category-tag {
-            background-color: #e0e0e0;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 16px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.1s;
-        }
-        .category-tag.active {
-            background-color: #4CAF50;
-            color: white;
-            font-weight: bold;
-        }
-        .tag-delete { margin-left: 5px; color: #ff5252; font-weight: bold; cursor: pointer; }
-        
-        .table-category-badge {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-            display: inline-block;
-            margin: 2px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7C6CF6">
+  <title>我的小說與短劇追蹤看板</title>
+  <style>
+    :root{
+      --primary:#7C6CF6;
+      --primary-dark:#6656E8;
+      --primary-soft:#F2EFFF;
+      --novel:#EAF4FF;
+      --drama:#F3EDFF;
+      --success:#66BB6A;
+      --success-soft:#EAF7EC;
+      --danger:#EF9A9A;
+      --danger-dark:#D66E6E;
+      --bg:#F7F7FB;
+      --panel:#FFFFFF;
+      --text:#25263A;
+      --muted:#74778C;
+      --line:#E5E7EF;
+      --shadow:0 10px 28px rgba(41,43,74,.08);
+      --radius:18px;
+    }
 
-        .action-btn { padding: 3px 8px; margin: 2px; cursor: pointer; font-size: 12px; }
-        .edit-btn { background-color: #ff9800; color: white; border: none; border-radius: 4px; }
-        .delete-btn { background-color: #f44336; color: white; border: none; border-radius: 4px; }
-    
-        /* 浮動搜尋工具 */
-        .floating-search {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            z-index: 9999;
-            width: min(360px, calc(100vw - 24px));
-            background: rgba(255, 255, 255, 0.98);
-            border: 1px solid #d7d7d7;
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-            padding: 10px;
-            backdrop-filter: blur(8px);
-        }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+      font-size:16px;
+      line-height:1.55;
+    }
+    button,input,select{font:inherit}
+    button{touch-action:manipulation}
 
-        .floating-search-row {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+    .app{
+      width:min(1560px,calc(100% - 28px));
+      margin:0 auto;
+      padding:24px 0 60px;
+    }
 
-        .floating-search input {
-            flex: 1;
-            min-width: 0;
-            padding: 9px 10px;
-            border: 1px solid #cfcfcf;
-            border-radius: 9px;
-            font-size: 15px;
-            outline: none;
-        }
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+    }
+    .header h1{
+      margin:0;
+      font-size:clamp(26px,3vw,38px);
+      letter-spacing:-.02em;
+    }
 
-        .floating-search input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76,175,80,0.14);
-        }
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .stat-card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+    .stat-label{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:800;
+      margin-bottom:6px;
+    }
+    .stat-value{
+      font-size:32px;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
 
-        .floating-search button {
-            border: none;
-            border-radius: 9px;
-            padding: 9px 10px;
-            cursor: pointer;
-            font-weight: bold;
-            white-space: nowrap;
-        }
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      margin-bottom:18px;
+      overflow:hidden;
+    }
 
-        .search-prev, .search-next {
-            background: #4CAF50;
-            color: white;
-        }
+    details>summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+    }
+    details>summary::-webkit-details-marker{display:none}
 
-        .search-close {
-            background: #eeeeee;
-            color: #333;
-        }
+    .summary-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:18px 20px;
+      font-weight:900;
+    }
+    .summary-row::after{
+      content:"展開";
+      color:var(--primary);
+      background:var(--primary-soft);
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+    }
+    details[open]>.summary-row::after{content:"收合"}
 
-        .floating-search-status {
-            margin-top: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #555;
-            min-height: 18px;
-        }
+    .panel-body{padding:0 20px 20px}
+    .section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .section-title h2,.section-title h3{margin:0}
+    .section-title small{color:var(--muted)}
 
-        .search-match {
-            background: #fff3a6 !important;
-            outline: 2px solid #f6c343;
-            outline-offset: -2px;
-        }
+    .cloud-grid{
+      display:grid;
+      grid-template-columns:minmax(260px,1fr) auto;
+      gap:12px;
+      align-items:end;
+    }
 
-        .search-current {
-            background: #ffd25f !important;
-            outline: 3px solid #ff9800;
-            outline-offset: -3px;
-        }
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{
+      font-size:13px;
+      color:#50536A;
+      font-weight:800;
+    }
+    input[type="text"],input[type="search"],select{
+      width:100%;
+      min-height:44px;
+      border:1px solid #D8DAE5;
+      border-radius:12px;
+      background:#fff;
+      padding:9px 12px;
+      color:var(--text);
+      outline:none;
+      transition:.2s;
+    }
+    input:focus,select:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(124,108,246,.12);
+    }
 
-        .floating-search-toggle {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            z-index: 9998;
-            width: 54px;
-            height: 54px;
-            border: none;
-            border-radius: 50%;
-            background: #4CAF50;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
-            display: none;
-        }
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      min-height:44px;
+      border:0;
+      border-radius:12px;
+      padding:9px 15px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.15s;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:var(--primary-dark)}
+    .btn-light{background:#EFF0F5;color:#3F4257}
+    .btn-success{background:var(--success);color:#fff}
+    .btn-danger{background:var(--danger);color:#6D2E2E}
+    .btn-blue{background:#6EA8E8;color:#fff}
+    .btn-orange{background:#E6A365;color:#fff}
+    .sync-status{
+      grid-column:1/-1;
+      min-height:20px;
+      font-size:13px;
+      font-weight:800;
+    }
 
-        @media (max-width: 700px) {
-            .floating-search {
-                left: 8px;
-                right: 8px;
-                bottom: 8px;
-                width: auto;
-                padding: 8px;
-            }
+    .tag-container{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .category-tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:0;
+      border-radius:999px;
+      padding:8px 13px;
+      background:#EFF0F4;
+      color:#383B4F;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .category-tag.active{
+      background:var(--primary);
+      color:#fff;
+    }
+    .tag-delete{
+      color:#E86B70;
+      font-weight:900;
+      line-height:1;
+    }
+    .category-tag.active .tag-delete{color:#fff}
 
-            .floating-search-row {
-                flex-wrap: wrap;
-            }
+    .tag-manage{
+      display:grid;
+      grid-template-columns:minmax(180px,320px) auto;
+      gap:8px;
+      margin-top:14px;
+    }
 
-            .floating-search input {
-                flex: 1 1 100%;
-                font-size: 16px;
-            }
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      gap:12px;
+    }
+    .sub-card{
+      grid-column:span 6;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:#FCFCFE;
+    }
+    .sub-card.novel{background:linear-gradient(180deg,#FBFDFF,#F6FAFF)}
+    .sub-card.drama{background:linear-gradient(180deg,#FDFBFF,#FAF7FF)}
+    .sub-card h4{margin:0 0 14px;font-size:18px}
+    .sub-card .form-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .span-2{grid-column:span 2}
+    .span-3{grid-column:span 3}
+    .span-6{grid-column:span 6}
+    .span-12{grid-column:span 12}
+    .form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 
-            .floating-search button {
-                flex: 1;
-                min-height: 42px;
-            }
-        }
+    .list-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:18px 20px 10px;
+    }
+    .list-header h2{margin:0}
+    .result-count{color:var(--muted);font-size:14px;font-weight:800}
 
-    
-        /* 分類標籤收合區 */
-        .category-collapse {
-            background: #f1f8e9;
-            border: 1px solid #dcebd4;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            overflow: hidden;
-        }
+    .table-wrap{
+      width:100%;
+      overflow-x:auto;
+      padding:0 20px 20px;
+    }
+    table{
+      width:100%;
+      min-width:1420px;
+      border-collapse:separate;
+      border-spacing:0;
+      background:#fff;
+    }
+    th,td{
+      padding:13px 10px;
+      text-align:center;
+      vertical-align:middle;
+      font-size:14px;
+      border-bottom:1px solid #ECEEF4;
+    }
+    thead th{
+      background:#FAFAFC;
+      font-weight:900;
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+    .novel-head{background:var(--novel)!important}
+    .drama-head{background:var(--drama)!important}
+    tbody tr{transition:.15s}
+    tbody tr:hover{background:#F7F4FF}
+    tbody tr:last-child td{border-bottom:0}
+    .filter-row td{
+      background:#fff;
+      padding:8px 6px 12px;
+    }
+    .filter-row select{
+      min-height:38px;
+      font-size:13px;
+      padding:6px 8px;
+    }
+    .table-category-badge{
+      display:inline-block;
+      margin:2px;
+      padding:5px 9px;
+      border-radius:999px;
+      background:var(--primary-soft);
+      color:#5F4FD5;
+      font-weight:850;
+      font-size:13px;
+    }
+    .name-cell{
+      text-align:left;
+      min-width:220px;
+    }
+    .name-cell strong{
+      display:block;
+      font-size:15px;
+      line-height:1.35;
+    }
+    .name-cell small{
+      display:block;
+      color:var(--muted);
+      margin-top:3px;
+    }
+    .action-stack{
+      display:flex;
+      justify-content:center;
+      gap:6px;
+    }
+    .icon-btn{
+      width:36px;
+      height:36px;
+      border:0;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:16px;
+      font-weight:900;
+    }
+    .icon-edit{background:#FFF0D7}
+    .icon-delete{background:#FDE4E4}
 
-        .category-collapse-summary {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 15px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            user-select: none;
-        }
+    .mobile-only{display:none}
+    .mobile-filter-panel{
+      margin:0 14px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .mobile-filter-panel summary{
+      padding:13px 14px;
+      font-weight:900;
+      background:#FAFAFC;
+    }
+    .mobile-filter-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      padding:14px;
+    }
 
-        .category-collapse-summary::-webkit-details-marker {
-            display: none;
-        }
+    .card-list{
+      display:grid;
+      gap:14px;
+      padding:0 14px 16px;
+    }
+    .data-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 8px 22px rgba(41,43,74,.06);
+    }
+    .card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .type-chip{
+      flex-shrink:0;
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:12px;
+      font-weight:900;
+    }
+    .type-chip.novel{background:var(--novel);color:#3F78B8}
+    .type-chip.drama{background:var(--drama);color:#7057BD}
+    .card-title{
+      margin:8px 0 0;
+      font-size:21px;
+      line-height:1.35;
+      letter-spacing:-.01em;
+    }
+    .card-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:4px;
+    }
+    .meta-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px 12px;
+      margin-top:14px;
+    }
+    .meta-item{
+      background:#FAFAFC;
+      border-radius:12px;
+      padding:10px;
+      min-width:0;
+    }
+    .meta-item b{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:2px;
+    }
+    .card-divider{
+      height:1px;
+      background:#ECEEF4;
+      margin:16px 0;
+    }
+    .card-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:14px;
+    }
 
-        .category-collapse-summary::after {
-            content: "展開 ▼";
-            flex-shrink: 0;
-            padding: 5px 9px;
-            border-radius: 999px;
-            background: #ffffff;
-            color: #397a3d;
-            font-size: 12px;
-            font-weight: bold;
-        }
+    /* 輕巧浮動搜尋 */
+    .floating-search-toggle{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:9998;
+      width:56px;
+      height:56px;
+      border:0;
+      border-radius:50%;
+      background:var(--primary);
+      color:#fff;
+      box-shadow:0 12px 28px rgba(72,60,160,.28);
+      font-size:23px;
+      cursor:pointer;
+    }
+    .floating-search{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:9999;
+      width:min(420px,calc(100vw - 24px));
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 18px 40px rgba(41,43,74,.20);
+      padding:12px;
+      display:none;
+    }
+    .floating-search.open{display:block}
+    .floating-row{display:flex;gap:8px;align-items:center}
+    .floating-row input{flex:1}
+    .floating-nav{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:8px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .floating-nav button{
+      border:0;
+      border-radius:10px;
+      min-height:38px;
+      padding:7px 12px;
+      font-weight:900;
+      cursor:pointer;
+      background:var(--primary-soft);
+      color:var(--primary-dark);
+    }
+    .floating-status{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+    }
+    .search-match{
+      background:#FFF5A8!important;
+      outline:2px solid #F2C94C;
+      outline-offset:-2px;
+    }
+    .search-current{
+      background:#FFD96A!important;
+      outline:3px solid #F39A2E;
+      outline-offset:-3px;
+    }
 
-        .category-collapse[open] .category-collapse-summary::after {
-            content: "收合 ▲";
-        }
+    .empty-state{
+      padding:36px 18px;
+      text-align:center;
+      color:var(--muted);
+    }
 
-        .category-collapse-info {
-            margin-left: auto;
-            color: #5f6f5c;
-            font-size: 13px;
-            font-weight: normal;
-        }
+    @media(max-width:900px){
+      .app{width:calc(100% - 16px);padding-top:14px}
+      .stats{grid-template-columns:repeat(3,1fr);gap:10px}
+      .stat-card{padding:14px}
+      .stat-value{font-size:26px}
+      .cloud-grid,.tag-manage{grid-template-columns:1fr}
+      .desktop-only{display:none!important}
+      .mobile-only{display:block}
+      .sub-card{grid-column:span 12}
+      .summary-row{padding:16px}
+      .panel-body{padding:0 16px 16px}
+    }
 
-        .category-collapse-content {
-            padding: 0 15px 15px;
-            border-top: 1px solid #dcebd4;
-        }
-
-        .category-collapse-content .tag-container {
-            padding-top: 14px;
-        }
-
-        .category-manage-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-
-        .category-manage-row input {
-            flex: 1;
-            min-width: 180px;
-            padding: 8px 10px;
-            border: 1px solid #cfd8cc;
-            border-radius: 8px;
-        }
-
-        .category-manage-row button {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            background: #4CAF50;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        @media (max-width: 700px) {
-            .category-collapse-summary {
-                align-items: flex-start;
-                flex-wrap: wrap;
-                padding: 13px;
-                font-size: 16px;
-            }
-
-            .category-collapse-info {
-                order: 3;
-                width: 100%;
-                margin-left: 0;
-            }
-
-            .category-collapse-content {
-                padding: 0 12px 12px;
-            }
-
-            .category-manage-row {
-                flex-direction: column;
-            }
-
-            .category-manage-row input,
-            .category-manage-row button {
-                width: 100%;
-                min-height: 42px;
-            }
-        }
-
-    </style>
+    @media(max-width:560px){
+      .header h1{font-size:25px}
+      .stats{grid-template-columns:1fr 1fr}
+      .stats .stat-card:last-child{grid-column:1/-1}
+      .sub-card .form-grid,.mobile-filter-grid,.meta-grid{grid-template-columns:1fr}
+      .sub-card .span-2,.sub-card .span-3,.sub-card .span-6{grid-column:span 1}
+      .btn-row .btn,.form-actions .btn{flex:1 1 100%}
+      .floating-search{
+        left:8px;
+        right:8px;
+        bottom:8px;
+        width:auto;
+      }
+      .floating-row{flex-wrap:wrap}
+      .floating-row input{flex:1 1 100%}
+      .floating-search-toggle{right:14px;bottom:14px}
+    }
+  </style>
 </head>
 <body>
+  <main class="app">
+    <header class="header">
+      <h1>🎬 我的小說與短劇追蹤看板</h1>
+    </header>
 
-    <h1>🎬 我的小說與短劇追蹤看板</h1>
-
-    <!-- Google Sheets 雲端備份與同步設定區 -->
-    <section style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-        <h4 style="margin: 0 0 5px 0;">🔗 Google Sheets 雲端同步與備份</h4>
-        <input type="text" id="gas-url" placeholder="請貼上正確的 Apps Script 網址..." style="width: 60%; padding: 5px; margin-bottom: 5px;">
-        <button onclick="saveGasUrl()" style="padding: 5px 8px;">儲存網址</button>
-        <button onclick="syncFromGoogleSheets()" style="padding: 5px 8px; background: #1976d2; color: white; border: none; cursor: pointer;">從雲端下載</button>
-        <button onclick="syncToGoogleSheets()" style="padding: 5px 8px; background: #e65100; color: white; border: none; cursor: pointer;">備份至雲端</button>
-        <div id="sync-status" style="margin-top: 5px; font-size: 12px; font-weight: bold;"></div>
+    <section class="stats">
+      <article class="stat-card">
+        <div class="stat-label">📖 小說</div>
+        <div class="stat-value" id="novel-count">0</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-label">🎥 短劇</div>
+        <div class="stat-value" id="drama-count">0</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-label">✅ 已完結</div>
+        <div class="stat-value" id="completed-count">0</div>
+      </article>
     </section>
 
-    <!-- 分類標籤管理與複選篩選區 -->
-    <details class="category-collapse" id="category-collapse">
-        <summary class="category-collapse-summary">
-            <span>🏷️ 分類標籤篩選與管理</span>
-            <span class="category-collapse-info" id="category-filter-info">目前顯示：全部分類</span>
-        </summary>
-
-        <div class="category-collapse-content">
-            <div class="tag-container" id="tag-list"></div>
-
-            <div class="category-manage-row">
-                <input type="text" id="new-tag-input" placeholder="輸入新分類名稱...">
-                <button type="button" onclick="addNewTagFromInput()">新增分類標籤</button>
-            </div>
+    <details class="panel">
+      <summary class="summary-row">☁️ Google Sheets 雲端同步與備份</summary>
+      <div class="panel-body">
+        <div class="cloud-grid">
+          <div class="field">
+            <label for="gas-url">Apps Script 網址</label>
+            <input type="text" id="gas-url" placeholder="請貼上 Apps Script 網址">
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-light" type="button" onclick="saveGasUrl()">儲存網址</button>
+            <button class="btn btn-blue" type="button" onclick="syncFromGoogleSheets()">⬇️ 從雲端下載</button>
+            <button class="btn btn-orange" type="button" onclick="syncToGoogleSheets()">⬆️ 備份至雲端</button>
+          </div>
+          <div id="sync-status" class="sync-status" aria-live="polite"></div>
         </div>
+      </div>
     </details>
 
-    <!-- 新增/編輯資料表單 -->
-    <section class="form-section">
-        <h3 id="form-title">新增追蹤項目</h3>
-        <form id="tracker-form" onsubmit="saveRow(event)">
-            <input type="hidden" id="edit-index" value="">
-            
-            <h4>📖 小說資訊</h4>
-            <div class="form-row">
-                <input type="hidden" id="category" value="穿越" required>
-                <span style="font-size: 13px; font-weight: bold;">選擇分類(可多選)：</span>
-                <span id="form-category-tags" style="display:inline-block; width:100%;"></span>
-            </div>
-            
-            <div class="form-row">
-                <input type="text" id="novelName" placeholder="小說名稱" required style="width: 220px;">
-                <input type="text" id="author" placeholder="作者" style="width: 120px;">
-                <input type="text" id="novelML" placeholder="男主角" style="width: 100px;">
-                <input type="text" id="novelFL" placeholder="女主角" style="width: 100px;">
-            </div>
-
-            <div class="form-row">
-                <input type="text" id="chapter" placeholder="章節" style="width: 90px;">
-                <input type="text" id="novelStatus" placeholder="完結狀態" style="width: 90px;">
-                <input type="text" id="txtLink" placeholder="txt 連結/備註" style="width: 150px;">
-            </div>
-
-            <h4>🎥 短劇資訊</h4>
-            <div class="form-row">
-                <input type="text" id="dramaName" placeholder="短劇名稱" style="width: 220px;">
-                <input type="text" id="dramaML" placeholder="短劇男主角" style="width: 100px;">
-                <input type="text" id="dramaFL" placeholder="短劇女主角" style="width: 100px;">
-                <input type="text" id="dramaProgress" placeholder="進度 (如第四季)" style="width: 110px;">
-                <input type="text" id="dramaStatus" placeholder="完結狀態" style="width: 90px;">
-            </div>
-            
-            <div style="margin-top: 15px;">
-                <button type="submit" id="submit-btn" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; cursor: pointer;">新增資料</button>
-                <button type="button" id="cancel-btn" onclick="resetForm()" style="padding: 8px 16px; background: #9e9e9e; color: white; border: none; cursor: pointer; display: none; margin-left: 5px;">取消編輯</button>
-            </div>
-        </form>
-    </section>
-
-    <!-- 資料呈現與智慧篩選清單 -->
-    <section>
-        <h3>追蹤清單總覽</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th colspan="8" style="background: #e3f2fd;">小說區</th>
-                    <th colspan="5" style="background: #e8f5e9;">短劇區</th>
-                    <th rowspan="2" style="background: #fff; vertical-align: middle;">操作</th>
-                </tr>
-                <tr>
-                    <th>分類</th>
-                    <th>小說名稱</th>
-                    <th>作者</th>
-                    <th>男主角</th>
-                    <th>女主角</th>
-                    <th>章節</th>
-                    <th>完結</th>
-                    <th>txt</th>
-                    <th>短劇</th>
-                    <th>男主角</th>
-                    <th>女主角</th>
-                    <th>進度</th>
-                    <th>完結</th>
-                </tr>
-                <tr class="filter-row">
-                    <td><select id="col-0" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-1" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-2" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-3" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-4" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-5" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-6" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-7" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-8" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-9" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-10" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-11" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td><select id="col-12" onchange="filterTable()"><option value="">全部</option></select></td>
-                    <td>-</td>
-                </tr>
-            </thead>
-            <tbody id="sheet-data"></tbody>
-        </table>
-    </section>
-
-
-    <!-- 浮動搜尋工具 -->
-    <div class="floating-search" id="floating-search">
-        <div class="floating-search-row">
-            <input
-                type="search"
-                id="floating-search-input"
-                placeholder="搜尋小說、作者、主角、短劇..."
-                autocomplete="off"
-                oninput="updateFloatingSearch()"
-                onkeydown="handleFloatingSearchKey(event)"
-            >
-            <button type="button" class="search-prev" onclick="goToPreviousMatch()">上一個</button>
-            <button type="button" class="search-next" onclick="goToNextMatch()">下一個</button>
-            <button type="button" class="search-close" onclick="closeFloatingSearch()">×</button>
+    <details class="panel" id="category-collapse">
+      <summary class="summary-row">
+        <span>🏷️ 分類標籤篩選與管理</span>
+        <span id="category-filter-info" style="font-size:13px;color:var(--muted);font-weight:700;margin-left:auto;">目前顯示：全部分類</span>
+      </summary>
+      <div class="panel-body">
+        <div id="tag-list" class="tag-container"></div>
+        <div class="tag-manage">
+          <input type="text" id="new-tag-input" placeholder="輸入新分類名稱…">
+          <button class="btn btn-light" type="button" onclick="addNewTagFromInput()">新增分類標籤</button>
         </div>
-        <div class="floating-search-status" id="floating-search-status">輸入關鍵字開始搜尋</div>
+      </div>
+    </details>
+
+    <details class="panel" id="form-panel">
+      <summary class="summary-row"><span id="form-title">＋ 新增追蹤項目</span></summary>
+      <div class="panel-body">
+        <form id="tracker-form" onsubmit="saveRow(event)">
+          <input type="hidden" id="edit-index" value="">
+          <input type="hidden" id="category" value="">
+
+          <div class="field" style="margin-bottom:16px;">
+            <label>選擇分類（可多選）</label>
+            <div id="form-category-tags" class="tag-container"></div>
+          </div>
+
+          <div class="form-grid">
+            <section class="sub-card novel">
+              <h4>📖 小說資訊</h4>
+              <div class="form-grid">
+                <div class="field span-6">
+                  <label for="novelName">小說名稱</label>
+                  <input type="text" id="novelName" placeholder="輸入小說名稱">
+                </div>
+                <div class="field span-3">
+                  <label for="author">作者</label>
+                  <input type="text" id="author" placeholder="作者">
+                </div>
+                <div class="field span-3">
+                  <label for="chapter">章節</label>
+                  <input type="text" id="chapter" placeholder="例如 847">
+                </div>
+                <div class="field span-3">
+                  <label for="novelML">男主角</label>
+                  <input type="text" id="novelML" placeholder="男主角">
+                </div>
+                <div class="field span-3">
+                  <label for="novelFL">女主角</label>
+                  <input type="text" id="novelFL" placeholder="女主角">
+                </div>
+                <div class="field span-3">
+                  <label for="novelStatus">完結狀態</label>
+                  <input type="text" id="novelStatus" placeholder="完結／連載中">
+                </div>
+                <div class="field span-3">
+                  <label for="txtLink">TXT 連結／備註</label>
+                  <input type="text" id="txtLink" placeholder="V、網址或備註">
+                </div>
+              </div>
+            </section>
+
+            <section class="sub-card drama">
+              <h4>🎥 短劇資訊</h4>
+              <div class="form-grid">
+                <div class="field span-6">
+                  <label for="dramaName">短劇名稱</label>
+                  <input type="text" id="dramaName" placeholder="輸入短劇名稱">
+                </div>
+                <div class="field span-3">
+                  <label for="dramaML">短劇男主角</label>
+                  <input type="text" id="dramaML" placeholder="男主角">
+                </div>
+                <div class="field span-3">
+                  <label for="dramaFL">短劇女主角</label>
+                  <input type="text" id="dramaFL" placeholder="女主角">
+                </div>
+                <div class="field span-3">
+                  <label for="dramaProgress">進度</label>
+                  <input type="text" id="dramaProgress" placeholder="例如 第四季">
+                </div>
+                <div class="field span-3">
+                  <label for="dramaStatus">完結狀態</label>
+                  <input type="text" id="dramaStatus" placeholder="完結／更新中">
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" id="submit-btn">新增資料</button>
+            <button class="btn btn-light" type="button" id="cancel-btn" onclick="resetForm()" style="display:none;">取消編輯</button>
+          </div>
+        </form>
+      </div>
+    </details>
+
+    <section class="panel">
+      <div class="list-header">
+        <h2>追蹤清單總覽</h2>
+        <div id="result-count" class="result-count"></div>
+      </div>
+
+      <details class="mobile-only mobile-filter-panel">
+        <summary>⚙️ 進階欄位篩選</summary>
+        <div id="mobile-filter-grid" class="mobile-filter-grid"></div>
+      </details>
+
+      <div class="desktop-only table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th colspan="8" class="novel-head">小說區</th>
+              <th colspan="5" class="drama-head">短劇區</th>
+              <th rowspan="2">操作</th>
+            </tr>
+            <tr>
+              <th>分類</th>
+              <th>小說名稱</th>
+              <th>作者</th>
+              <th>男主角</th>
+              <th>女主角</th>
+              <th>章節</th>
+              <th>完結</th>
+              <th>TXT</th>
+              <th>短劇</th>
+              <th>男主角</th>
+              <th>女主角</th>
+              <th>進度</th>
+              <th>完結</th>
+            </tr>
+            <tr class="filter-row" id="desktop-filter-row"></tr>
+          </thead>
+          <tbody id="sheet-data"></tbody>
+        </table>
+      </div>
+
+      <div id="mobile-card-list" class="mobile-only card-list"></div>
+    </section>
+  </main>
+
+  <button id="floating-search-toggle" class="floating-search-toggle" type="button" onclick="openFloatingSearch()" aria-label="開啟搜尋">🔍</button>
+
+  <section id="floating-search" class="floating-search" aria-label="浮動搜尋">
+    <div class="floating-row">
+      <input type="search" id="floating-search-input" placeholder="搜尋小說、作者、主角、短劇…" oninput="updateFloatingSearch()" onkeydown="handleFloatingSearchKey(event)">
+      <button class="btn btn-light" type="button" onclick="closeFloatingSearch()">✕</button>
     </div>
+    <div class="floating-nav">
+      <button type="button" onclick="goToPreviousMatch()">上一個</button>
+      <div id="floating-search-status" class="floating-status">輸入關鍵字開始搜尋</div>
+      <button type="button" onclick="goToNextMatch()">下一個</button>
+    </div>
+  </section>
 
-    <button
-        type="button"
-        class="floating-search-toggle"
-        id="floating-search-toggle"
-        onclick="openFloatingSearch()"
-        aria-label="開啟搜尋"
-        title="開啟搜尋"
-    >🔍</button>
+  <iframe name="cloud-upload-frame" hidden></iframe>
 
-    <script>
-        let tableData = JSON.parse(localStorage.getItem('novel_tableData'));
-        if (!tableData || !Array.isArray(tableData) || tableData.length === 0) {
-            tableData = [
-                ["穿越, 空間", "我的夫君柔弱自理", "勤不語", "姜重華", "月般般", "281", "完結", "-", "醫妃駕到：我的夫君柔弱自理", "月般般", "姜晏辭", "第五季", "完結"]
-            ];
-        }
+  <script>
+    const COLUMN_NAMES = [
+      "分類","小說名稱","作者","小說男主角","小說女主角","章節",
+      "小說完結","TXT","短劇名稱","短劇男主角","短劇女主角","進度","短劇完結"
+    ];
 
-        let categories = JSON.parse(localStorage.getItem('novel_categories'));
-        if (!categories || !Array.isArray(categories) || categories.length === 0) {
-            categories = ["穿越", "空間", "系統", "重生", "報仇", "異能", "奇幻", "獸世", "多夫", "穿書", "古代", "現代", "瘋批", "宮鬥", "萌寶", "祭品", "豪門總裁", "修真"];
-        }
+    const fields = [
+      "novelName","author","novelML","novelFL",
+      "chapter","novelStatus","txtLink",
+      "dramaName","dramaML","dramaFL","dramaProgress","dramaStatus"
+    ];
 
-        let activeCategoryFilters = [];
+    let tableData = parseStoredJson("novel_tableData", []);
+    if (!Array.isArray(tableData) || tableData.length === 0) {
+      tableData = [[
+        "穿越, 空間","我的夫君柔弱自理","勤不語","姜重華","月般般",
+        "281","完結","-","醫妃駕到：我的夫君柔弱自理",
+        "月般般","姜晏辭","第五季","完結"
+      ]];
+    }
 
-        const fields = [
-            'novelName', 'author', 'novelML', 'novelFL', 
-            'chapter', 'novelStatus', 'txtLink', 
-            'dramaName', 'dramaML', 'dramaFL', 'dramaProgress', 'dramaStatus'
-        ];
+    let categories = parseStoredJson("novel_categories", []);
+    if (!Array.isArray(categories) || categories.length === 0) {
+      categories = ["穿越","空間","系統","重生","報仇","異能","奇幻","獸世","多夫","穿書","古代","現代","瘋批","宮鬥","萌寶","祭品","豪門總裁","修真"];
+    }
 
-        window.onload = function() {
-            const savedUrl = localStorage.getItem('gas_url');
-            if (savedUrl) document.getElementById('gas-url').value = savedUrl;
+    let activeCategoryFilters = [];
+    let columnFilters = Array(13).fill("");
+    let floatingSearchMatches = [];
+    let floatingSearchIndex = -1;
 
-            extractCategoriesFromData();
-            renderCategoryTags();
-            renderFormCategoryButtons();
-            renderTable();
-        };
+    window.addEventListener("DOMContentLoaded",()=>{
+      const savedUrl = localStorage.getItem("gas_url");
+      if(savedUrl) document.getElementById("gas-url").value = savedUrl;
+      normalizeRows();
+      extractCategoriesFromData();
+      buildFilterControls();
+      renderCategoryTags();
+      renderFormCategoryButtons();
+      renderAll();
+    });
 
-        function saveDataToLocal() {
-            localStorage.setItem('novel_tableData', JSON.stringify(tableData));
-            localStorage.setItem('novel_categories', JSON.stringify(categories));
-        }
+    function parseStoredJson(key,fallback){
+      try{
+        const value = JSON.parse(localStorage.getItem(key));
+        return value ?? fallback;
+      }catch{return fallback}
+    }
 
-        function saveGasUrl() {
-            const url = document.getElementById('gas-url').value.trim();
-            localStorage.setItem('gas_url', url);
-            alert("Google Sheets 網址已儲存！");
-        }
+    function text(value){return value==null?"":String(value).trim()}
+    function shown(value){const t=text(value);return t===""?"-":t}
 
-        function extractCategoriesFromData() {
-            tableData.forEach(row => {
-                if (row[0]) {
-                    let cats = row[0].split(',').map(c => c.trim());
-                    cats.forEach(cat => {
-                        if (cat && !categories.includes(cat) && cat !== "-") {
-                            categories.push(cat);
-                        }
-                    });
-                }
+    function normalizeRows(){
+      tableData = tableData.filter(Array.isArray).map(row=>{
+        const r=row.slice(0,13);
+        while(r.length<13) r.push("");
+        return r;
+      });
+    }
+
+    function saveDataToLocal(){
+      localStorage.setItem("novel_tableData",JSON.stringify(tableData));
+      localStorage.setItem("novel_categories",JSON.stringify(categories));
+    }
+
+    function setStatus(message,type="info",clearAfter=0){
+      const el=document.getElementById("sync-status");
+      const colors={info:"#74778C",success:"#2F8F4A",error:"#C85A5A"};
+      el.style.color=colors[type]||colors.info;
+      el.textContent=message;
+      if(clearAfter) setTimeout(()=>{if(el.textContent===message) el.textContent=""},clearAfter);
+    }
+
+    function saveGasUrl(){
+      const url=document.getElementById("gas-url").value.trim();
+      if(!url){setStatus("請先輸入 Apps Script 網址。","error");return}
+      localStorage.setItem("gas_url",url);
+      setStatus("網址已儲存在這台裝置。","success",2500);
+    }
+
+    function extractCategoriesFromData(){
+      tableData.forEach(row=>{
+        text(row[0]).split(",").map(v=>v.trim()).forEach(cat=>{
+          if(cat && cat!=="-" && !categories.includes(cat)) categories.push(cat);
+        });
+      });
+      saveDataToLocal();
+    }
+
+    function createTagButton(label,active,onToggle,canDelete=false){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="category-tag"+(active?" active":"");
+      const span=document.createElement("span");
+      span.textContent=label;
+      btn.appendChild(span);
+
+      if(canDelete){
+        const del=document.createElement("span");
+        del.className="tag-delete";
+        del.textContent="×";
+        del.addEventListener("click",e=>{e.stopPropagation();removeTag(label)});
+        btn.appendChild(del);
+      }
+
+      btn.addEventListener("click",onToggle);
+      return btn;
+    }
+
+    function renderCategoryTags(){
+      const box=document.getElementById("tag-list");
+      box.innerHTML="";
+      box.appendChild(createTagButton("全部",activeCategoryFilters.length===0,()=>{
+        activeCategoryFilters=[];
+        renderCategoryTags();
+        renderAll();
+      }));
+
+      categories.forEach(cat=>{
+        box.appendChild(createTagButton(cat,activeCategoryFilters.includes(cat),()=>toggleCategoryFilter(cat),true));
+      });
+
+      const info=document.getElementById("category-filter-info");
+      info.textContent=activeCategoryFilters.length===0
+        ?"目前顯示：全部分類"
+        :`已選 ${activeCategoryFilters.length} 個：${activeCategoryFilters.join("、")}`;
+    }
+
+    function toggleCategoryFilter(cat){
+      const i=activeCategoryFilters.indexOf(cat);
+      if(i>=0) activeCategoryFilters.splice(i,1);
+      else activeCategoryFilters.push(cat);
+      renderCategoryTags();
+      renderAll();
+    }
+
+    function renderFormCategoryButtons(){
+      const box=document.getElementById("form-category-tags");
+      const selected=text(document.getElementById("category").value).split(",").map(v=>v.trim()).filter(Boolean);
+      box.innerHTML="";
+      categories.forEach(cat=>{
+        box.appendChild(createTagButton(cat,selected.includes(cat),()=>toggleFormCategory(cat)));
+      });
+    }
+
+    function toggleFormCategory(cat){
+      const input=document.getElementById("category");
+      let selected=text(input.value).split(",").map(v=>v.trim()).filter(Boolean);
+      const i=selected.indexOf(cat);
+      if(i>=0) selected.splice(i,1);
+      else selected.push(cat);
+      input.value=selected.join(", ");
+      renderFormCategoryButtons();
+    }
+
+    function addNewTagFromInput(){
+      const input=document.getElementById("new-tag-input");
+      const value=input.value.trim();
+      if(!value) return;
+      if(value.includes(",")){alert("分類名稱請不要包含逗號。");return}
+      if(categories.includes(value)){alert("這個分類已經存在。");return}
+      categories.push(value);
+      saveDataToLocal();
+      renderCategoryTags();
+      renderFormCategoryButtons();
+      input.value="";
+    }
+
+    function removeTag(cat){
+      if(categories.length<=1){alert("至少需要保留一個分類。");return}
+      if(!confirm(`確定要從分類清單移除「${cat}」嗎？`)) return;
+      categories=categories.filter(v=>v!==cat);
+      activeCategoryFilters=activeCategoryFilters.filter(v=>v!==cat);
+      saveDataToLocal();
+      renderCategoryTags();
+      renderFormCategoryButtons();
+      renderAll();
+    }
+
+    function buildFilterControls(){
+      const desktop=document.getElementById("desktop-filter-row");
+      const mobile=document.getElementById("mobile-filter-grid");
+      desktop.innerHTML="";
+      mobile.innerHTML="";
+
+      COLUMN_NAMES.forEach((name,index)=>{
+        const td=document.createElement("td");
+        td.appendChild(createFilterSelect(index));
+        desktop.appendChild(td);
+
+        const field=document.createElement("div");
+        field.className="field";
+        const label=document.createElement("label");
+        label.textContent=name;
+        field.append(label,createFilterSelect(index));
+        mobile.appendChild(field);
+      });
+
+      const actionTd=document.createElement("td");
+      actionTd.textContent="-";
+      desktop.appendChild(actionTd);
+      updateFilterOptions();
+    }
+
+    function createFilterSelect(index){
+      const select=document.createElement("select");
+      select.dataset.filterCol=String(index);
+      select.addEventListener("change",e=>{
+        columnFilters[index]=e.target.value;
+        document.querySelectorAll(`[data-filter-col="${index}"]`).forEach(s=>s.value=e.target.value);
+        renderAll();
+      });
+      return select;
+    }
+
+    function updateFilterOptions(){
+      COLUMN_NAMES.forEach((_,index)=>{
+        const values=new Set();
+        tableData.forEach(row=>{
+          const cell=text(row[index]);
+          if(!cell || cell==="-") return;
+          if(index===0){
+            cell.split(",").map(v=>v.trim()).filter(Boolean).forEach(v=>values.add(v));
+          }else values.add(cell);
+        });
+
+        const sorted=[...values].sort((a,b)=>a.localeCompare(b,"zh-Hant",{numeric:true}));
+        document.querySelectorAll(`[data-filter-col="${index}"]`).forEach(select=>{
+          const current=columnFilters[index];
+          select.innerHTML='<option value="">全部</option>';
+          sorted.forEach(value=>{
+            const option=document.createElement("option");
+            option.value=value;
+            option.textContent=value;
+            select.appendChild(option);
+          });
+          select.value=sorted.includes(current)?current:"";
+          if(current && !sorted.includes(current)) columnFilters[index]="";
+        });
+      });
+    }
+
+    function rowMatches(row){
+      if(activeCategoryFilters.length){
+        const cats=text(row[0]).split(",").map(v=>v.trim());
+        if(!activeCategoryFilters.some(cat=>cats.includes(cat))) return false;
+      }
+
+      for(let i=0;i<13;i++){
+        const filter=columnFilters[i];
+        if(!filter) continue;
+        const cell=text(row[i]);
+        if(i===0){
+          const cats=cell.split(",").map(v=>v.trim());
+          if(!cats.includes(filter)) return false;
+        }else if(cell!==filter) return false;
+      }
+      return true;
+    }
+
+    function getFilteredEntries(){
+      return tableData.map((row,index)=>({row,index})).filter(x=>rowMatches(x.row));
+    }
+
+    function rowHasNovel(row){
+      return row.slice(1,8).some(v=>text(v) && text(v)!=="-");
+    }
+    function rowHasDrama(row){
+      return row.slice(8,13).some(v=>text(v) && text(v)!=="-");
+    }
+
+    function renderAll(){
+      updateFilterOptions();
+      const entries=getFilteredEntries();
+      renderStats();
+      renderDesktop(entries);
+      renderMobile(entries);
+      document.getElementById("result-count").textContent=`顯示 ${entries.length}／${tableData.length} 筆`;
+      if(document.getElementById("floating-search-input").value.trim()) updateFloatingSearch();
+    }
+
+    function renderStats(){
+      const novelCount=tableData.filter(row=>text(row[1]) && text(row[1])!=="-").length;
+      const dramaCount=tableData.filter(row=>text(row[8]) && text(row[8])!=="-").length;
+      let completed=0;
+      tableData.forEach(row=>{
+        if(text(row[6]).includes("完結")) completed++;
+        if(text(row[12]).includes("完結")) completed++;
+      });
+      document.getElementById("novel-count").textContent=novelCount;
+      document.getElementById("drama-count").textContent=dramaCount;
+      document.getElementById("completed-count").textContent=completed;
+    }
+
+    function renderDesktop(entries){
+      const tbody=document.getElementById("sheet-data");
+      tbody.innerHTML="";
+
+      entries.forEach(({row,index})=>{
+        const tr=document.createElement("tr");
+
+        row.forEach((value,col)=>{
+          const td=document.createElement("td");
+
+          if(col===0){
+            text(value).split(",").map(v=>v.trim()).filter(Boolean).forEach(cat=>{
+              const badge=document.createElement("span");
+              badge.className="table-category-badge";
+              badge.textContent=cat;
+              td.appendChild(badge);
             });
+          }else if(col===1 || col===8){
+            td.className="name-cell";
+            const strong=document.createElement("strong");
+            strong.textContent=shown(value);
+            td.appendChild(strong);
+
+            const small=document.createElement("small");
+            if(col===1) small.textContent=`${shown(row[2])} · ${shown(row[5])}章`;
+            else small.textContent=`${shown(row[9])} × ${shown(row[10])}`;
+            td.appendChild(small);
+          }else{
+            td.textContent=shown(value);
+          }
+          tr.appendChild(td);
+        });
+
+        const actionTd=document.createElement("td");
+        const wrap=document.createElement("div");
+        wrap.className="action-stack";
+        wrap.append(
+          createIconButton("✏️","icon-edit",()=>editRow(index),"編輯"),
+          createIconButton("🗑️","icon-delete",()=>deleteRow(index),"刪除")
+        );
+        actionTd.appendChild(wrap);
+        tr.appendChild(actionTd);
+        tbody.appendChild(tr);
+      });
+
+      if(!entries.length){
+        const tr=document.createElement("tr");
+        const td=document.createElement("td");
+        td.colSpan=14;
+        td.className="empty-state";
+        td.textContent="找不到符合條件的資料。";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+    }
+
+    function createIconButton(label,className,handler,title){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className=`icon-btn ${className}`;
+      btn.textContent=label;
+      btn.title=title;
+      btn.addEventListener("click",handler);
+      return btn;
+    }
+
+    function renderMobile(entries){
+      const list=document.getElementById("mobile-card-list");
+      list.innerHTML="";
+
+      if(!entries.length){
+        const empty=document.createElement("div");
+        empty.className="empty-state";
+        empty.textContent="找不到符合條件的資料。";
+        list.appendChild(empty);
+        return;
+      }
+
+      entries.forEach(({row,index})=>{
+        const card=document.createElement("article");
+        card.className="data-card";
+
+        const cats=document.createElement("div");
+        cats.className="tag-container";
+        text(row[0]).split(",").map(v=>v.trim()).filter(Boolean).forEach(cat=>{
+          const badge=document.createElement("span");
+          badge.className="table-category-badge";
+          badge.textContent=cat;
+          cats.appendChild(badge);
+        });
+        card.appendChild(cats);
+
+        if(rowHasNovel(row)){
+          card.appendChild(createMobileSection("novel","📖 小說",shown(row[1]),
+            `${shown(row[2])} · ${shown(row[5])}章`,
+            [
+              ["作者",row[2]],["男主角",row[3]],["女主角",row[4]],
+              ["章節",row[5]],["狀態",row[6]],["TXT／備註",row[7]]
+            ]
+          ));
         }
 
-        function renderCategoryTags() {
-            const tagList = document.getElementById('tag-list');
-            let allActive = activeCategoryFilters.length === 0 ? 'active' : '';
-            
-            let html = `<button class="category-tag ${allActive}" id="tag-all" onclick="toggleCategoryFilter('全部', this)">全部</button>`;
-            
-            categories.forEach(cat => {
-                let isActive = activeCategoryFilters.includes(cat) ? 'active' : '';
-                html += `
-                    <button class="category-tag ${isActive}" onclick="toggleCategoryFilter('${cat}', this)">
-                        ${cat} <span class="tag-delete" onclick="event.stopPropagation(); removeTag('${cat}')">×</span>
-                    </button>`;
-            });
-            tagList.innerHTML = html;
-
-            const filterInfo = document.getElementById('category-filter-info');
-            if (filterInfo) {
-                filterInfo.textContent = activeCategoryFilters.length === 0
-                    ? '目前顯示：全部分類'
-                    : `已選 ${activeCategoryFilters.length} 個：${activeCategoryFilters.join('、')}`;
-            }
+        if(rowHasDrama(row)){
+          if(rowHasNovel(row)){
+            const divider=document.createElement("div");
+            divider.className="card-divider";
+            card.appendChild(divider);
+          }
+          card.appendChild(createMobileSection("drama","🎥 短劇",shown(row[8]),
+            `${shown(row[9])} × ${shown(row[10])}`,
+            [
+              ["男主角",row[9]],["女主角",row[10]],
+              ["進度",row[11]],["狀態",row[12]]
+            ]
+          ));
         }
 
-        function toggleCategoryFilter(category, btnElement) {
-            if (category === '全部') {
-                activeCategoryFilters = [];
-            } else {
-                const index = activeCategoryFilters.indexOf(category);
-                if (index > -1) {
-                    activeCategoryFilters.splice(index, 1);
-                } else {
-                    activeCategoryFilters.push(category);
-                }
-            }
-            renderCategoryTags();
-            filterTable();
-        }
+        const actions=document.createElement("div");
+        actions.className="card-actions";
+        actions.append(
+          createIconButton("✏️","icon-edit",()=>editRow(index),"編輯"),
+          createIconButton("🗑️","icon-delete",()=>deleteRow(index),"刪除")
+        );
+        card.appendChild(actions);
+        list.appendChild(card);
+      });
+    }
 
-        function renderFormCategoryButtons() {
-            const container = document.getElementById('form-category-tags');
-            const currentVal = document.getElementById('category').value;
-            let selectedList = currentVal.split(',').map(c => c.trim());
-            
-            container.innerHTML = "";
-            categories.forEach(cat => {
-                let isSelected = selectedList.includes(cat);
-                let style = isSelected ? 'background-color: #4CAF50; color: white; font-weight: bold;' : 'background-color: #e0e0e0;';
-                container.innerHTML += `
-                    <button type="button" style="border: none; padding: 4px 10px; border-radius: 12px; cursor: pointer; margin-right: 4px; margin-bottom: 4px; ${style}" onclick="toggleFormCategory('${cat}')">
-                        ${cat}
-                    </button>
-                `;
-            });
-        }
+    function createMobileSection(type,kicker,title,subtitle,items){
+      const section=document.createElement("section");
 
-        function toggleFormCategory(cat) {
-            let currentVal = document.getElementById('category').value;
-            let selectedList = currentVal ? currentVal.split(',').map(c => c.trim()) : [];
-            
-            const index = selectedList.indexOf(cat);
-            if (index > -1) {
-                selectedList.splice(index, 1);
-            } else {
-                selectedList.push(cat);
-            }
-            
-            document.getElementById('category').value = selectedList.length > 0 ? selectedList.join(', ') : categories[0];
-            renderFormCategoryButtons();
-        }
+      const top=document.createElement("div");
+      top.className="card-top";
 
-        function renderTable() {
-            const tbody = document.getElementById('sheet-data');
-            let rowsHtml = "";
+      const left=document.createElement("div");
+      const chip=document.createElement("span");
+      chip.className=`type-chip ${type}`;
+      chip.textContent=kicker;
 
-            tableData.forEach((row, index) => {
-                let rowContent = "";
-                row.forEach((cellText, cellIdx) => {
-                    if (cellIdx === 0) {
-                        let cats = (cellText || "").split(',').map(c => `<span class="table-category-badge">${c.trim()}</span>`).join(' ');
-                        rowContent += `<td>${cats}</td>`;
-                    } else {
-                        rowContent += `<td>${cellText !== "" && cellText != null ? cellText : "-"}</td>`;
-                    }
-                });
+      const h=document.createElement("h3");
+      h.className="card-title";
+      h.textContent=title;
 
-                rowContent += `
-                    <td>
-                        <button class="action-btn edit-btn" onclick="editRow(${index})">編輯</button>
-                        <button class="action-btn delete-btn" onclick="deleteRow(${index})">刪除</button>
-                    </td>
-                `;
-                rowsHtml += `<tr>${rowContent}</tr>`;
-            });
+      const sub=document.createElement("div");
+      sub.className="card-subtitle";
+      sub.textContent=subtitle;
 
-            tbody.innerHTML = rowsHtml;
-            updateFilterOptions();
-            filterTable();
-        }
+      left.append(chip,h,sub);
+      top.appendChild(left);
+      section.appendChild(top);
 
-        function updateFilterOptions() {
-            for (let colIdx = 0; colIdx < 13; colIdx++) {
-                const select = document.getElementById(`col-${colIdx}`);
-                if (!select) continue;
-                const currentValue = select.value;
-                
-                let values = new Set();
-                tableData.forEach(row => {
-                    if (row[colIdx]) {
-                        let valStr = String(row[colIdx]).trim();
-                        if (colIdx === 0) {
-                            valStr.split(',').forEach(c => {
-                                if (c.trim() && c.trim() !== "-") values.add(c.trim());
-                            });
-                        } else {
-                            if (valStr && valStr !== "-") values.add(valStr);
-                        }
-                    }
-                });
+      const grid=document.createElement("div");
+      grid.className="meta-grid";
+      items.forEach(([label,value])=>{
+        const item=document.createElement("div");
+        item.className="meta-item";
+        const b=document.createElement("b");
+        b.textContent=label;
+        const span=document.createElement("span");
+        span.textContent=shown(value);
+        item.append(b,span);
+        grid.appendChild(item);
+      });
+      section.appendChild(grid);
+      return section;
+    }
 
-                select.innerHTML = '<option value="">全部</option>';
-                values.forEach(val => {
-                    let opt = document.createElement("option");
-                    opt.value = val;
-                    opt.textContent = val;
-                    select.appendChild(opt);
-                });
-                select.value = currentValue;
-            }
-        }
+    function saveRow(event){
+      event.preventDefault();
 
-        function filterTable() {
-            const tbody = document.getElementById('sheet-data');
-            const rows = tbody.getElementsByTagName('tr');
+      const novelName=document.getElementById("novelName").value.trim();
+      const dramaName=document.getElementById("dramaName").value.trim();
+      if(!novelName && !dramaName){alert("請至少輸入小說名稱或短劇名稱。");return}
 
-            for (let i = 0; i < rows.length; i++) {
-                let showRow = true;
-                const rowData = tableData[i];
+      let selected=text(document.getElementById("category").value);
+      if(!selected) selected=categories[0]||"未分類";
 
-                if (activeCategoryFilters.length > 0) {
-                    let rowCats = (rowData[0] || "").split(',').map(c => c.trim());
-                    let hasMatch = activeCategoryFilters.some(cat => rowCats.includes(cat));
-                    if (!hasMatch) showRow = false;
-                }
+      const row=[selected];
+      fields.forEach(id=>row.push(document.getElementById(id).value.trim()));
 
-                if (showRow) {
-                    for (let colIdx = 0; colIdx < 13; colIdx++) {
-                        const selectElem = document.getElementById(`col-${colIdx}`);
-                        if (selectElem && selectElem.value !== "") {
-                            let filterVal = selectElem.value;
-                            let cellText = rowData[colIdx] ? String(rowData[colIdx]) : "";
-                            if (colIdx === 0) {
-                                let rowCats = cellText.split(',').map(c => c.trim());
-                                if (!rowCats.includes(filterVal)) {
-                                    showRow = false;
-                                    break;
-                                }
-                            } else {
-                                if (cellText.trim() !== filterVal) {
-                                    showRow = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                rows[i].style.display = showRow ? "" : "none";
-            }
-        }
+      const edit=document.getElementById("edit-index").value;
+      if(edit==="") tableData.push(row);
+      else tableData[Number(edit)]=row;
 
-        function addNewTagFromInput() {
-            const input = document.getElementById('new-tag-input');
-            const val = input.value.trim();
-            if(!val || categories.includes(val)) return;
+      saveDataToLocal();
+      extractCategoriesFromData();
+      resetForm();
+      renderCategoryTags();
+      renderAll();
+      document.getElementById("form-panel").open=false;
+      alert("已成功儲存至本機。");
+    }
 
-            categories.push(val);
-            saveDataToLocal();
-            renderCategoryTags();
-            renderFormCategoryButtons();
-            input.value = '';
-        }
+    function editRow(index){
+      const row=tableData[index];
+      if(!row) return;
+      document.getElementById("category").value=text(row[0]);
+      fields.forEach((id,i)=>{
+        const value=text(row[i+1]);
+        document.getElementById(id).value=value==="-"?"":value;
+      });
+      document.getElementById("edit-index").value=String(index);
+      document.getElementById("form-title").textContent="✏️ 修改追蹤項目";
+      document.getElementById("submit-btn").textContent="儲存修改";
+      document.getElementById("cancel-btn").style.display="inline-block";
+      renderFormCategoryButtons();
+      document.getElementById("form-panel").open=true;
+      document.getElementById("form-panel").scrollIntoView({behavior:"smooth",block:"start"});
+    }
 
-        function removeTag(cat) {
-            if(categories.length <= 1) {
-                alert("至少需要保留一個分類！");
-                return;
-            }
-            categories = categories.filter(c => c !== cat);
-            activeCategoryFilters = activeCategoryFilters.filter(c => c !== cat);
-            saveDataToLocal();
-            renderCategoryTags();
-            
-            let currentFormCats = document.getElementById('category').value.split(',').map(c => c.trim());
-            if(currentFormCats.includes(cat)) {
-                currentFormCats = currentFormCats.filter(c => c !== cat);
-                document.getElementById('category').value = currentFormCats.join(', ');
-            }
-            renderFormCategoryButtons();
-        }
+    function resetForm(){
+      document.getElementById("tracker-form").reset();
+      document.getElementById("edit-index").value="";
+      document.getElementById("form-title").textContent="＋ 新增追蹤項目";
+      document.getElementById("submit-btn").textContent="新增資料";
+      document.getElementById("cancel-btn").style.display="none";
+      document.getElementById("category").value=categories[0]||"";
+      renderFormCategoryButtons();
+    }
 
-        function saveRow(event) {
-            event.preventDefault();
-            
-            const cat = document.getElementById('category').value || categories[0];
-            let rowData = [cat];
-            
-            fields.forEach(fieldId => {
-                rowData.push(document.getElementById(fieldId).value.trim());
-            });
+    function deleteRow(index){
+      const row=tableData[index];
+      const name=text(row?.[1])||text(row?.[8])||"這筆資料";
+      if(!confirm(`確定要刪除「${name}」嗎？`)) return;
+      tableData.splice(index,1);
+      saveDataToLocal();
+      renderAll();
+    }
 
-            const editIndex = document.getElementById('edit-index').value;
+    async function syncFromGoogleSheets(){
+      const url=document.getElementById("gas-url").value.trim();
+      if(!url){setStatus("請先輸入並儲存 Apps Script 網址。","error");return}
+      setStatus("正在從雲端下載資料…","info");
+      try{
+        const res=await fetch(url,{cache:"no-store"});
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data=await res.json();
+        if(!Array.isArray(data)) throw new Error("資料格式不符");
+        if(data.length===0){setStatus("雲端目前沒有資料，因此沒有覆蓋本機內容。","error");return}
+        tableData=data;
+        normalizeRows();
+        saveDataToLocal();
+        extractCategoriesFromData();
+        renderCategoryTags();
+        renderFormCategoryButtons();
+        renderAll();
+        setStatus(`下載成功，共載入 ${tableData.length} 筆資料。`,"success",3500);
+      }catch(err){
+        console.error(err);
+        setStatus("下載失敗，請檢查網址、網路或 Apps Script 發布權限。","error");
+      }
+    }
 
-            if (editIndex === "") {
-                tableData.push(rowData);
-            } else {
-                tableData[editIndex] = rowData;
-                resetForm();
-            }
+    function syncToGoogleSheets(){
+      const url=document.getElementById("gas-url").value.trim();
+      if(!url){setStatus("請先輸入並儲存 Apps Script 網址。","error");return}
+      if(!confirm(`即將把目前 ${tableData.length} 筆本機資料備份到 Google Sheets，並覆蓋雲端原有資料。確定繼續嗎？`)) return;
 
-            saveDataToLocal();
-            extractCategoriesFromData();
-            renderCategoryTags();
-            renderFormCategoryButtons();
-            renderTable();
+      setStatus("正在將資料送往雲端…","info");
+      const form=document.createElement("form");
+      form.method="POST";
+      form.action=url;
+      form.target="cloud-upload-frame";
+      form.style.display="none";
 
-            document.getElementById('tracker-form').reset();
-            document.getElementById('category').value = categories[0];
-            renderFormCategoryButtons();
-            alert("已成功儲存至本機！");
-        }
+      const input=document.createElement("input");
+      input.type="hidden";
+      input.name="data";
+      input.value=JSON.stringify(tableData);
 
-        function editRow(index) {
-            const row = tableData[index];
-            document.getElementById('category').value = row[0];
-            renderFormCategoryButtons();
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
 
-            fields.forEach((fieldId, i) => {
-                document.getElementById(fieldId).value = row[i+1] !== "-" && row[i+1] != null ? row[i+1] : "";
-            });
+      setStatus("資料已送往 Google Sheets，請稍候數秒完成寫入。","success",4500);
+    }
 
-            document.getElementById('edit-index').value = index;
-            document.getElementById('form-title').textContent = "修改追蹤項目";
-            document.getElementById('submit-btn').textContent = "儲存修改";
-            document.getElementById('cancel-btn').style.display = "inline-block";
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+    function openFloatingSearch(){
+      document.getElementById("floating-search").classList.add("open");
+      document.getElementById("floating-search-toggle").style.display="none";
+      setTimeout(()=>document.getElementById("floating-search-input").focus(),30);
+    }
 
-        function resetForm() {
-            document.getElementById('tracker-form').reset();
-            document.getElementById('edit-index').value = "";
-            document.getElementById('form-title').textContent = "新增追蹤項目";
-            document.getElementById('submit-btn').textContent = "新增資料";
-            document.getElementById('cancel-btn').style.display = "none";
-            document.getElementById('category').value = categories[0];
-            renderFormCategoryButtons();
-        }
+    function closeFloatingSearch(){
+      document.getElementById("floating-search").classList.remove("open");
+      document.getElementById("floating-search-toggle").style.display="block";
+      clearFloatingHighlights();
+    }
 
-        function deleteRow(index) {
-            if (confirm("確定要刪除這筆追蹤資料嗎？")) {
-                tableData.splice(index, 1);
-                saveDataToLocal();
-                renderTable();
-            }
-        }
+    function clearFloatingHighlights(){
+      document.querySelectorAll(".search-match,.search-current").forEach(el=>{
+        el.classList.remove("search-match","search-current");
+      });
+    }
 
-        function syncFromGoogleSheets() {
-            const gasUrl = document.getElementById('gas-url').value.trim();
-            const statusSpan = document.getElementById('sync-status');
-            
-            if (!gasUrl) {
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "請先輸入並儲存正確的網址！";
-                return;
-            }
+    function updateFloatingSearch(){
+      const keyword=document.getElementById("floating-search-input").value.trim().toLowerCase();
+      const status=document.getElementById("floating-search-status");
+      clearFloatingHighlights();
+      floatingSearchMatches=[];
+      floatingSearchIndex=-1;
 
-            statusSpan.style.color = "#d32f2f";
-            statusSpan.textContent = "正在從雲端下載...";
-            
-            fetch(gasUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if(data && Array.isArray(data) && data.length > 0) {
-                        tableData = data;
-                        saveDataToLocal();
-                        extractCategoriesFromData();
-                        renderCategoryTags();
-                        renderFormCategoryButtons();
-                        renderTable();
-                        statusSpan.style.color = "#2e7d32";
-                        statusSpan.textContent = "下載成功！";
-                        setTimeout(() => statusSpan.textContent = "", 3000);
-                    } else {
-                        statusSpan.style.color = "#d32f2f";
-                        statusSpan.textContent = "雲端無資料或格式不符。";
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    statusSpan.style.color = "#d32f2f";
-                    statusSpan.textContent = "下載失敗，請檢查網址或發布權限。";
-                });
-        }
+      if(!keyword){status.textContent="輸入關鍵字開始搜尋";return}
 
-        // 使用隱藏表單 POST 提交，完美解決所有長度與對齊問題
-        function syncToGoogleSheets() {
-            const gasUrl = document.getElementById('gas-url').value.trim();
-            const statusSpan = document.getElementById('sync-status');
-            
-            if (!gasUrl) {
-                statusSpan.style.color = "#d32f2f";
-                statusSpan.textContent = "請先輸入並儲存正確的網址！";
-                return;
-            }
+      document.querySelectorAll("#sheet-data tr").forEach(row=>{
+        row.querySelectorAll("td").forEach((cell,i,cells)=>{
+          if(i===cells.length-1) return;
+          if(cell.textContent.trim().toLowerCase().includes(keyword)){
+            cell.classList.add("search-match");
+            floatingSearchMatches.push(cell);
+          }
+        });
+      });
 
-            statusSpan.style.color = "#d32f2f";
-            statusSpan.textContent = "正在備份至雲端...";
+      if(!floatingSearchMatches.length){
+        status.textContent="找不到符合內容";
+        return;
+      }
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = gasUrl;
-            form.target = '_blank';
+      floatingSearchIndex=0;
+      focusFloatingSearchMatch();
+    }
 
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify(tableData);
+    function focusFloatingSearchMatch(){
+      if(!floatingSearchMatches.length || floatingSearchIndex<0) return;
+      floatingSearchMatches.forEach(el=>el.classList.remove("search-current"));
+      const current=floatingSearchMatches[floatingSearchIndex];
+      current.classList.add("search-current");
+      current.scrollIntoView({behavior:"smooth",block:"center",inline:"center"});
+      document.getElementById("floating-search-status").textContent=
+        `${floatingSearchIndex+1} / ${floatingSearchMatches.length}`;
+    }
 
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+    function goToNextMatch(){
+      if(!floatingSearchMatches.length){updateFloatingSearch();return}
+      floatingSearchIndex=(floatingSearchIndex+1)%floatingSearchMatches.length;
+      focusFloatingSearchMatch();
+    }
 
-            statusSpan.style.color = "#2e7d32";
-            statusSpan.textContent = "備份封包已成功送出至 Google 試算表！";
-            setTimeout(() => statusSpan.textContent = "", 4000);
-        }
+    function goToPreviousMatch(){
+      if(!floatingSearchMatches.length){updateFloatingSearch();return}
+      floatingSearchIndex=(floatingSearchIndex-1+floatingSearchMatches.length)%floatingSearchMatches.length;
+      focusFloatingSearchMatch();
+    }
 
-        // ===== 浮動搜尋 =====
-        let floatingSearchMatches = [];
-        let floatingSearchIndex = -1;
-
-        function clearFloatingSearchHighlights() {
-            document.querySelectorAll('.search-match, .search-current').forEach(cell => {
-                cell.classList.remove('search-match', 'search-current');
-            });
-        }
-
-        function updateFloatingSearch() {
-            const keyword = document.getElementById('floating-search-input').value.trim().toLowerCase();
-            const status = document.getElementById('floating-search-status');
-
-            clearFloatingSearchHighlights();
-            floatingSearchMatches = [];
-            floatingSearchIndex = -1;
-
-            if (!keyword) {
-                status.textContent = '輸入關鍵字開始搜尋';
-                return;
-            }
-
-            const rows = document.querySelectorAll('#sheet-data tr');
-
-            rows.forEach(row => {
-                if (row.style.display === 'none') return;
-
-                const cells = row.querySelectorAll('td');
-                cells.forEach((cell, cellIndex) => {
-                    // 最後一欄是操作按鈕，不列入搜尋
-                    if (cellIndex === cells.length - 1) return;
-
-                    const cellText = cell.textContent.trim().toLowerCase();
-                    if (cellText.includes(keyword)) {
-                        cell.classList.add('search-match');
-                        floatingSearchMatches.push(cell);
-                    }
-                });
-            });
-
-            if (floatingSearchMatches.length === 0) {
-                status.textContent = '找不到符合的內容';
-                return;
-            }
-
-            floatingSearchIndex = 0;
-            focusFloatingSearchMatch();
-        }
-
-        function focusFloatingSearchMatch() {
-            if (floatingSearchMatches.length === 0 || floatingSearchIndex < 0) return;
-
-            floatingSearchMatches.forEach(cell => cell.classList.remove('search-current'));
-
-            const current = floatingSearchMatches[floatingSearchIndex];
-            current.classList.add('search-current');
-            current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'center'
-            });
-
-            document.getElementById('floating-search-status').textContent =
-                `第 ${floatingSearchIndex + 1} 個，共 ${floatingSearchMatches.length} 個`;
-        }
-
-        function goToNextMatch() {
-            if (floatingSearchMatches.length === 0) {
-                updateFloatingSearch();
-                return;
-            }
-
-            floatingSearchIndex = (floatingSearchIndex + 1) % floatingSearchMatches.length;
-            focusFloatingSearchMatch();
-        }
-
-        function goToPreviousMatch() {
-            if (floatingSearchMatches.length === 0) {
-                updateFloatingSearch();
-                return;
-            }
-
-            floatingSearchIndex =
-                (floatingSearchIndex - 1 + floatingSearchMatches.length) % floatingSearchMatches.length;
-            focusFloatingSearchMatch();
-        }
-
-        function handleFloatingSearchKey(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                if (event.shiftKey) {
-                    goToPreviousMatch();
-                } else {
-                    goToNextMatch();
-                }
-            }
-
-            if (event.key === 'Escape') {
-                closeFloatingSearch();
-            }
-        }
-
-        function closeFloatingSearch() {
-            document.getElementById('floating-search').style.display = 'none';
-            document.getElementById('floating-search-toggle').style.display = 'block';
-            clearFloatingSearchHighlights();
-        }
-
-        function openFloatingSearch() {
-            document.getElementById('floating-search').style.display = 'block';
-            document.getElementById('floating-search-toggle').style.display = 'none';
-            setTimeout(() => document.getElementById('floating-search-input').focus(), 50);
-        }
-
-        // 表格重新渲染或篩選後，同步更新浮動搜尋結果
-        const originalRenderTable = renderTable;
-        renderTable = function() {
-            originalRenderTable();
-            if (document.getElementById('floating-search-input')?.value.trim()) {
-                updateFloatingSearch();
-            }
-        };
-
-        const originalFilterTable = filterTable;
-        filterTable = function() {
-            originalFilterTable();
-            if (document.getElementById('floating-search-input')?.value.trim()) {
-                updateFloatingSearch();
-            }
-        };
-
-    </script>
+    function handleFloatingSearchKey(event){
+      if(event.key==="Enter"){
+        event.preventDefault();
+        event.shiftKey?goToPreviousMatch():goToNextMatch();
+      }
+      if(event.key==="Escape") closeFloatingSearch();
+    }
+  </script>
 </body>
 </html>
